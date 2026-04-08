@@ -1,81 +1,80 @@
-# ci — Gestor de notas cifradas con AES-GCM y PBKDF2
+# PakayVault — Gestor de notas cifradas con AES-GCM, PBKDF2 y HMAC
 
-**ci** es un pequeño gestor de notas cifradas para uso educativo que muestra un esquema seguro de cifrado:
-- Derivación de clave con PBKDF2-HMAC-SHA256 (KDF).
-- Cifrado autenticado con `AES-GCM` (AEAD) para confidencialidad e integridad.
-- Persistencia en un único archivo JSON (`notes_data.json`) que almacena el salt, el test cifrado y las notas cifradas.
+**PakayVault** es un gestor de notas por consola seguro y estructurado. Utiliza un esquema de cifrado robusto para proteger tanto la confidencialidad de la información como la integridad global de los datos almacenados.
 
-> ⚠️ Proyecto educativo: aunque el script sigue buenas prácticas (KDF y AEAD), revisa las recomendaciones de seguridad en la sección correspondiente antes de usarlo en producción.
+## ¿Por qué el nombre "PakayVault"?
+El nombre es una fusión de dos mundos:
+* **Pakay:** Proviene del idioma quechua (lengua originaria de los Andes peruanos) y significa *"esconder"*, *"ocultar"* o *"guardar en secreto"*.
+* **Vault:** Del inglés, que significa *"bóveda"* o *"caja fuerte"*.
+
+Juntos, **PakayVault** representa una fortaleza digital inexpugnable para tus secretos, rindiendo homenaje a la riqueza lingüística y cultural del Perú.
+
+---
 
 ## Características principales
 
-- Creación, listado y edición de notas cifradas.
-- Derivación de clave a partir de contraseña maestra usando PBKDF2.
-- Uso de `AESGCM` para cifrado autenticado (nonce + ciphertext + tag).
-- Archivo único `notes_data.json` que guarda salt (base64), el test cifrado y las notas encriptadas.
+- **Cifrado Autenticado Individual:** Uso de `AES-GCM` (AEAD) para cifrar el título y el contenido de cada nota por separado, utilizando un nonce aleatorio de 12 bytes por operación.
+- **Derivación de Clave Robusta:** Implementa `PBKDF2-HMAC-SHA256` con **600,000 iteraciones** y un *salt* dinámico, cumpliendo con los estándares actuales para mitigar ataques de fuerza bruta por hardware moderno (GPU/ASIC).
+- **Protección de Integridad Global (HMAC):** Todo el archivo `notes_data.json` está sellado con una firma HMAC. Si un atacante intenta alterar, borrar o intercambiar notas manualmente en el archivo, el sistema detectará la corrupción y bloqueará el acceso.
+- **Gestión Intuitiva:** Creación, listado y edición independiente (título o contenido) de notas directamente desde la consola, sin exponer el texto plano en disco.
 
 ## Requisitos
 
 - Python 3.8+
 - Dependencias:
   ```bash
-  pip install -r requirements.txt
+  pip install cryptography
   ```
 
 ## Instalación y uso
 
 1. Clona el repositorio:
 ```bash
-git clone https://github.com/6Edgar9/Notas-Encriptadas.git
-cd ci
+git clone [https://github.com/tu-usuario/PakayVault.git](https://github.com/tu-usuario/PakayVault.git)
+cd PakayVault
 ```
 
 2. (Opcional) Crea y activa un entorno virtual:
 ```bash
 python -m venv venv
 source venv/bin/activate   # Linux / macOS
-venv\Scripts\activate    # Windows (cmd)
+venv\Scripts\activate      # Windows (cmd)
 ```
 
-3. Instala dependencias:
+3. Instala las dependencias:
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Ejecuta:
+4. Ejecuta el programa:
 ```bash
 python ci.py
 ```
 
-- La primera ejecución pedirá establecer una contraseña maestra.  
-- El archivo `notes_data.json` almacenará el `salt` (base64), un `test` cifrado (para verificar la contraseña) y la lista `notes` con títulos y contenidos cifrados.
+### Primer inicio de sesión
+La primera ejecución te pedirá establecer una contraseña maestra. A partir de esa contraseña, el sistema generará el archivo `notes_data.json`, el cual almacenará:
+- El `salt` (en base64).
+- Un texto de prueba cifrado (`test`) para validar tu contraseña en futuros inicios de sesión.
+- Tus `notes` (títulos y contenidos cifrados).
+- La firma global de integridad (`signature`).
+
+> **⚠️ Advertencia:** Si pierdes tu contraseña maestra, los datos serán **matemáticamente irrecuperables**. PakayVault no posee "puertas traseras" (backdoors) ni mecanismos de recuperación por diseño.
 
 ## Notas de seguridad y recomendaciones
 
-- **Protege el archivo `notes_data.json`**. Ajusta permisos (`chmod 600`) y evita respaldos inseguros.
-- **No reuses parámetros**: el salt debe ser aleatorio por cuenta/archivo (el script ya lo genera con `os.urandom(16)`).
-- **Valida iteraciones de KDF**: 100.000 iteraciones es un valor razonable; ajústalo según el entorno y la amenaza (movimientos GPU).
-- **Gestión de contraseñas**: no caches la contraseña en memoria más tiempo del necesario.
-- **Backups y recuperación**: si pierdes la contraseña, los datos serán irrecuperables. Diseña un plan de recuperación si es necesario.
-- **Auditoría**: añade logging limitado y pruebas unitarias para evitar errores.
+- **Protege el archivo `notes_data.json`:** Ajusta los permisos del sistema operativo (ej. `chmod 600` en sistemas Unix) para que solo tu usuario pueda leerlo.
+- **Iteraciones de PBKDF2:** El valor actual es de 600,000 iteraciones. Esto hace que generar la llave tarde una fracción de segundo, pero hace inviable la adivinación automatizada.
+- **Evita keyloggers:** Al ser una herramienta de consola, asegúrate de ejecutarla en un entorno libre de malware que pueda capturar las pulsaciones de tu teclado.
 
-## Posibles mejoras
+## Estructura del proyecto
 
-- Añadir función de eliminación de notas.
-- Añadir exportación/backup cifrado y opción de cambiar contraseña (rotación de claves).
-- Integrar una interfaz gráfica o API con autenticación adicional.
-- Añadir control de versiones en el esquema de cifrado (para migraciones futuras).
-- Añadir pruebas automáticas (pytest) y validación del archivo JSON.
-
-## Estructura sugerida del repositorio
-
-```
-ci/
-├── ci.py                  # Script principal
-├── requirements.txt
-├── README.md
-├── .gitignore
-└── notes_data.json        # generado en tiempo de ejecución (ignorado)
+```text
+PakayVault/
+├── ci.py                  # Script principal y lógica criptográfica
+├── requirements.txt       # Dependencias del proyecto
+├── README.md              # Documentación
+├── .gitignore             
+└── notes_data.json        # Generado en tiempo de ejecución (¡No subir al repo!)
 ```
 
 ---
@@ -84,5 +83,4 @@ ci/
 #### Edrem
 
 ---
-
-Desarrollado con fines académicos y de práctica en Python.
+*Desarrollado con fines académicos y aplicación de buenas prácticas en criptografía con Python.*
