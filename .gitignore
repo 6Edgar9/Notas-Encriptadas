@@ -1,1 +1,20 @@
+# PakayVault data
 notes_data.json
+notas_exportadas.txt
+old_notes_data.json
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# Archivos de entorno y logs
+*.log
+.env
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
